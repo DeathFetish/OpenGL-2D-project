@@ -66,10 +66,10 @@ public:
 		if (!heroAnimatedSprite)
 			return false;
 
-		vector<pair<string, uint64_t>> heroAnimations = { make_pair("pos1", 1.5e8),
-														  make_pair("pos2", 1.5e8),
-														  make_pair("pos1", 1.5e8),
-														  make_pair("pos3", 1.5e8), };
+		vector<pair<string, double>> heroAnimations = { make_pair("pos1", 150),
+														make_pair("pos2", 150),
+														make_pair("pos1", 150),
+														make_pair("pos3", 150), };
 
 		resources.loadTexture("parquet", "parquet", GL_REPEAT);
 		resources.loadTexture("vertical wall", "vertical wall", GL_REPEAT);
@@ -118,7 +118,7 @@ public:
 		hero->render();
 	}
 
-	void update(const uint64_t deltaTime) 
+	void update(const double deltaTime) 
 	{
 		resources.getShader("spriteShaderProgram")->setMatrix("view_projection_mat", camera->getViewProjectionMatrix());
 		

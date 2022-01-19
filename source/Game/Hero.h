@@ -53,7 +53,7 @@ public:
 		return vec2(position.x + (size.x - windowManger.screenSize.x) / 2, position.y + (size.y - windowManger.screenSize.y) / 2);
 	}
 
-	void update(const uint64_t deltaTime, vector<bool>& keys, double mouseCoordX, double mouseCoordY, Camera* camera, Map* map)
+	void update(const double deltaTime, vector<bool>& keys, double mouseCoordX, double mouseCoordY, Camera* camera, Map* map)
 	{
 		switch (keys[GLFW_KEY_A])
 		{

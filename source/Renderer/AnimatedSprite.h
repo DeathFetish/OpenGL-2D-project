@@ -3,17 +3,17 @@
 #include <vector>
 #include "Sprite.h"
 
-namespace Renderer
+namespace RenderEngine
 {
 	class AnimatedSprite : public Sprite
 	{
 	private:
 		mutable bool isNewFrame = false;
 		size_t currentFrame = 0;
-		uint64_t currentAnimationTime = 0;
+		double currentAnimationTime = 0;
 
-		map<string, vector<pair<string, uint64_t>>> states;
-		map<string, vector<pair<string, uint64_t>>>::const_iterator currentAnimationDurations;
+		map<string, vector<pair<string, double>>> states;
+		map<string, vector<pair<string, double>>>::const_iterator currentAnimationDurations;
 
 	public:
 		AnimatedSprite(const ShaderProgram* shader,
@@ -28,7 +28,7 @@ namespace Renderer
 			currentAnimationDurations = states.end();
 		}
 
-		void insertState(const string& stateName, const vector<pair<string, uint64_t>>& subTexturesDuration)
+		void insertState(const string& stateName, const vector<pair<string, double>>& subTexturesDuration)
 		{
 			states.emplace(stateName, subTexturesDuration);
 		}
@@ -51,7 +51,7 @@ namespace Renderer
 			}
 		}
 
-		void update(const uint64_t deltaTime)
+		void update(const double deltaTime)
 		{
 			if (currentAnimationDurations != states.end())
 			{

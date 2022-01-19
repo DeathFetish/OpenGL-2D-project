@@ -1,13 +1,13 @@
 ﻿#include <glad/glad.h>
 #include <iostream>
 #include <vector>
-#include <chrono>
 
 #include <GLFW/glfw3.h>
 
 #include "Resources/WindowManager.h"
 #include "Resources/ResourceManager.h"
-
+#include "System/Timer.h"
+#include "Renderer/Renderer.h"
 #include "Engine/Camera.h"
 #include "Game/Game.h"
 
@@ -34,25 +34,21 @@ int main()
 	glfwSetKeyCallback(windowManger.window, keyCallback);
 	glfwSetCursorPosCallback(windowManger.window, CursorPosCallback);
 
-	glClearColor(0.29f, 0.0f, 0.51f, 0.0f);
-
-	auto previousTime = chrono::high_resolution_clock::now();
+	renderer.setClearColor(0.29f, 0.0f, 0.51f, 0.0f);
+	time.start();
 
 	while (!glfwWindowShouldClose(windowManger.window))
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
-		
-		auto currentTime = chrono::high_resolution_clock::now();
-		uint64_t deltaTime = chrono::duration_cast<chrono::nanoseconds>(currentTime - previousTime).count();
-		previousTime = currentTime;
+		time.update();
 
-		game.update(deltaTime);
+		if (time.CheckFPS())
+		{
+			game.update(time.getDeltaTime());
+			renderer.clear();
+			game.render();
 
-		game.render();
-		
-		for (long long i = 0; i < 199999; ++i);
-
-		glfwSwapBuffers(windowManger.window);
+			glfwSwapBuffers(windowManger.window);
+		}
 		glfwPollEvents();
 	}
 
