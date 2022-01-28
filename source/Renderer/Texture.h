@@ -4,19 +4,21 @@
 #include <map>
 #include <glad/glad.h>
 
+using std::map;
+using std::string;
+
 namespace RenderEngine
 {
 	class Texture
 	{
 	public:
-
-		class SubTexture
+		struct SubTexture
 		{
-		public:
-			vec2 leftDownPoint;
-			vec2 rightTopPoint;
+			glm::vec2 leftDownPoint;
+			glm::vec2 rightTopPoint;
+			glm::uvec2 size;
 
-			SubTexture(vec2 leftDownPoint, vec2 rightTopPoint) : leftDownPoint(leftDownPoint), rightTopPoint(rightTopPoint) {}
+			SubTexture(const vec2& leftDownPoint, const vec2& rightTopPoint, const uvec2& size) : leftDownPoint(leftDownPoint), rightTopPoint(rightTopPoint), size(size) {}
 
 			SubTexture() : leftDownPoint(vec2(0.f, 0.f)), rightTopPoint(vec2(1.f, 1.f)) {}
 		};
@@ -33,7 +35,6 @@ namespace RenderEngine
 		map<string, SubTexture> subTextures;
 
 	public:
-
 		Texture() = delete;
 		Texture(const Texture&) = delete;
 		Texture& operator = (const Texture&) = delete;
@@ -76,9 +77,9 @@ namespace RenderEngine
 
 		unsigned int height() const { return textureHeight; }
 
-		void addSubTexture(const string& name, const vec2& leftDownPoint, const vec2& rightTopPoint)
+		void addSubTexture(const string& name, const vec2& leftDownPoint, const vec2& rightTopPoint, const vec2& size)
 		{
-			subTextures.emplace(name, SubTexture(leftDownPoint, rightTopPoint));
+			subTextures.emplace(name, SubTexture(leftDownPoint, rightTopPoint, size));
 		}
 
 		const SubTexture& getSubTexture(const string& name) const

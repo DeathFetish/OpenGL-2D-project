@@ -1,12 +1,13 @@
 #pragma once
 #include <iostream>
 #include <string>
+
 #include <glad/glad.h>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-using namespace std;
 using namespace glm;
+using std::string;
 
 namespace RenderEngine
 {
@@ -30,7 +31,7 @@ namespace RenderEngine
 			{
 				GLchar info[1024];
 				glGetShaderInfoLog(shaderID, 1024, nullptr, info);
-				cout << "createShader compile error: " << info << endl;
+				std::cout << "createShader compile error: " << info << std::endl;
 				return false;
 			}
 			return true;
@@ -46,14 +47,14 @@ namespace RenderEngine
 			GLuint vertexShaderID;
 			if (!createShader(vertexShader, GL_VERTEX_SHADER, vertexShaderID))
 			{
-				cout << "createSHader for vertex shader failed" << endl;
+				std::cout << "createShader for vertex shader failed" << std::endl;
 				return;
 			}
 
 			GLuint fragmentShaderID;
 			if (!createShader(fragmentShader, GL_FRAGMENT_SHADER, fragmentShaderID))
 			{
-				cout << "createSHader for fragment shader failed" << endl;
+				std::cout << "createShader for fragment shader failed" << std::endl;
 				glDeleteShader(vertexShaderID);
 				return;
 			}
@@ -73,7 +74,7 @@ namespace RenderEngine
 			{
 				GLchar info[1024];
 				glGetShaderInfoLog(id, 1024, nullptr, info);
-				cout << "ShaderProgram link error: " << info << endl;
+				std::cout << "ShaderProgram link error: " << info << std::endl;
 			}
 			else
 				compiled = true;

@@ -2,7 +2,7 @@
 #include <glad/glad.h>
 #include <vector>
 
-using namespace std;
+using std::vector;
 
 namespace RenderEngine
 {

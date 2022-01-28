@@ -1,17 +1,14 @@
-﻿#include <glad/glad.h>
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Resources/WindowManager.h"
-#include "Resources/ResourceManager.h"
-#include "System/Timer.h"
+#include "Managers/WindowManager.h"
+#include "Managers/ResourceManager.h"
 #include "Renderer/Renderer.h"
-#include "Engine/Camera.h"
+#include "System/Time.h"
 #include "Game/Game.h"
-
-using namespace std;
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -20,20 +17,22 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 
 void CursorPosCallback(GLFWwindow* window, double x, double y)
 {
-	game.setMouseCoord(x, y);
+	game.setMouseCoord(x, windowManger.screenSize.y - y);
 }
 
-int main()
+int main(int argc, char** argv)
 {
 	if (!windowManger.init())
 		return -1;
 
-	if (!game.init())
-		return -1;
-
 	glfwSetKeyCallback(windowManger.window, keyCallback);
 	glfwSetCursorPosCallback(windowManger.window, CursorPosCallback);
+	resources.setExecutablePath(argv[0]);
+	resources.loadJSONResources("Resources\\resources.json");
 
+	if (!game.init())
+		return -1;
+	
 	renderer.setClearColor(0.29f, 0.0f, 0.51f, 0.0f);
 	time.start();
 
@@ -41,9 +40,10 @@ int main()
 	{
 		time.update();
 
-		if (time.CheckFPS())
+		if (time.сheckFPS())
 		{
 			game.update(time.getDeltaTime());
+
 			renderer.clear();
 			game.render();
 
