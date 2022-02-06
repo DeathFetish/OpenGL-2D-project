@@ -10,6 +10,12 @@
 #include "System/Time.h"
 #include "Game/Game.h"
 
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mode)
+{
+	game.setMouseButton(button, action);
+}
+
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	game.setKey(key, action);
@@ -27,29 +33,33 @@ int main(int argc, char** argv)
 
 	glfwSetKeyCallback(windowManger.window, keyCallback);
 	glfwSetCursorPosCallback(windowManger.window, CursorPosCallback);
+	glfwSetMouseButtonCallback(windowManger.window, mouseButtonCallback);
+
 	resources.setExecutablePath(argv[0]);
 	resources.loadJSONResources("Resources\\resources.json");
 
 	if (!game.init())
 		return -1;
 	
+	//renderer.setDepthTest(true);
 	renderer.setClearColor(0.29f, 0.0f, 0.51f, 0.0f);
 	time.start();
 
 	while (!glfwWindowShouldClose(windowManger.window))
 	{
+		glfwPollEvents();
+
 		time.update();
 
 		if (time.сheckFPS())
 		{
-			game.update(time.getDeltaTime());
-
 			renderer.clear();
+
+			game.update(time.getDeltaTime());
 			game.render();
 
 			glfwSwapBuffers(windowManger.window);
 		}
-		glfwPollEvents();
 	}
 
 	resources.deleteAllResources();

@@ -2,8 +2,6 @@
 #include <glad/glad.h>
 #include <vector>
 
-using std::vector;
-
 namespace RenderEngine
 {
 	struct VertexBufferLayoutElement
@@ -21,7 +19,7 @@ namespace RenderEngine
 	class VertexBufferLayout
 	{
 	private:
-		vector<VertexBufferLayoutElement> layoutElements;
+		std::vector<VertexBufferLayoutElement> layoutElements;
 		unsigned int stride = 0;
 
 	public:
@@ -40,6 +38,6 @@ namespace RenderEngine
 
 		unsigned int getStride() const { return stride; }
 
-		const vector<VertexBufferLayoutElement>& getLayoutElements() const { return layoutElements; }
+		const std::vector<VertexBufferLayoutElement>& getLayoutElements() const { return layoutElements; }
 	};
 }

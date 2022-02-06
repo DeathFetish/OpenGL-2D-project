@@ -40,11 +40,13 @@ namespace RenderEngine
 		const ShaderProgram* shader;
 		const Texture* texture;
 
-		vector<FrameDescription> framesDescriptions;
+		std::vector<FrameDescription> framesDescriptions;
 
 		mutable unsigned int prevFrameId;
 		mutable glm::vec2 size;
 		mutable glm::vec2 realPosition;
+
+		float layer;
 
 		VertexArray vertexArray;
 		VertexBuffer vertexCoordsBuffer;
@@ -57,8 +59,9 @@ namespace RenderEngine
 
 		Sprite(const ShaderProgram* shader,
 			const Texture* texture,
-			const std::string& initialSubTextureName)
-			: shader(shader), texture(texture), prevFrameId(0)
+			const std::string& initialSubTextureName,
+			const float layer)
+			: shader(shader), texture(texture), prevFrameId(0), layer(layer)
 		{
 			//	1-----2
 			//  |	  |
@@ -78,7 +81,7 @@ namespace RenderEngine
 				1.0, 0.0
 			};
 
-			auto subTexture = texture->getSubTexture(initialSubTextureName);
+			const auto& subTexture = texture->getSubTexture(initialSubTextureName);
 
 			/*const GLfloat textureCoords[] =
 			{
@@ -116,16 +119,17 @@ namespace RenderEngine
 
 		virtual void render(const glm::vec2& position, const float rotation, const unsigned int frameId) const
 		{
+			const auto& curDescription = framesDescriptions[frameId];
 			if (prevFrameId != frameId)
 			{
 				prevFrameId = frameId;
 
 				const GLfloat textureCoords[] = 
 				{
-					framesDescriptions[frameId].leftBottomPoint.x, framesDescriptions[frameId].leftBottomPoint.y,
-					framesDescriptions[frameId].leftBottomPoint.x, framesDescriptions[frameId].rightTopPoint.y,
-					framesDescriptions[frameId].rightTopPoint.x,   framesDescriptions[frameId].rightTopPoint.y,
-					framesDescriptions[frameId].rightTopPoint.x,   framesDescriptions[frameId].leftBottomPoint.y,
+					curDescription.leftBottomPoint.x, curDescription.leftBottomPoint.y,
+					curDescription.leftBottomPoint.x, curDescription.rightTopPoint.y,
+					curDescription.rightTopPoint.x, curDescription.rightTopPoint.y,
+					curDescription.rightTopPoint.x, curDescription.leftBottomPoint.y,
 				};
 
 				textureCoordsBuffer.update(textureCoords, 8 * sizeof(GLfloat));
@@ -135,24 +139,29 @@ namespace RenderEngine
 			
 			glm::mat4 model(1.f);
 			
-			realPosition.x = position.x; //+ framesDescriptions[frameId].offset.x;
-			realPosition.y = position.y; //+ framesDescriptions[frameId].offset.y;
-			size.x = framesDescriptions[frameId].size.x;
-			size.y = framesDescriptions[frameId].size.y;
+			realPosition.x = position.x + curDescription.offset.x * cos(rotation) - curDescription.offset.y * sin(rotation);
+			realPosition.y = position.y + curDescription.offset.y * cos(rotation) - curDescription.offset.x * sin(rotation);
 
-			/*std::cout << "_____________" << std::endl;
-			std::cout << framesDescriptions[frameId].offset.y << std::endl;
-			std::cout << "position: " << position.x << "    " << position.y << std::endl;
-			std::cout << "RealPosition: " << realPosition.x << "    " << realPosition.y << std::endl;*/
+			size.x = curDescription.size.x;
+			size.y = curDescription.size.y;
 
+			
+			/*model = glm::translate(model, vec3(0.5f * size.x, 0.5f * size.y, 0.f));
+			model = glm::rotate(model, glm::radians(rotation), vec3(0.f, 0.f, 1.f));
+			model = glm::translate(model, vec3(-0.5f * size.x, -0.5f * size.y, 0.f));*/
+			
+			//Перемещать на размер объекта, а не кадра!!! (Размер героя 36, 19)
+			
 			model = glm::translate(model, vec3(realPosition, 0.f));
-	//		model = glm::translate(model, vec3(0.5f * size.x, 0.5f * size.y, 0.f));
-	//		model = glm::rotate(model, glm::radians(rotation), vec3(0.f, 0.f, 1.f));
-	//		model = glm::translate(model, vec3(-0.5f * size.x, -0.5f * size.y, 0.f));
+			model = glm::translate(model, vec3(0.5f * 36, 0.5f * 19, 0.f));
+			model = glm::rotate(model, rotation, vec3(0.f, 0.f, 1.f));
+			model = glm::translate(model, vec3(-0.5f * 36, -0.5f * 19, 0.f));
 			model = glm::scale(model, vec3(size.x, size.y, 1.f));
 
 			vertexArray.bind();
-			shader->setMatrix("model_mat", model);
+			
+			shader->setMatrix("modelMat", model);
+			shader->setFloat("layer", layer);
 
 			glActiveTexture(GL_TEXTURE0);
 			texture->bind();
@@ -160,7 +169,7 @@ namespace RenderEngine
 			renderer.draw(vertexArray, indexBuffer, *shader);
 		}
 
-		void insertFrames(const vector<FrameDescription>& framesDescriptions)
+		void insertFrames(const std::vector<FrameDescription>& framesDescriptions)
 		{
 			this->framesDescriptions = framesDescriptions;
 		}

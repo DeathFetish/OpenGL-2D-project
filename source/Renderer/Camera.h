@@ -4,32 +4,33 @@
 #include <vector>
 
 #include "../Managers/WindowManager.h"
+#include "../Game/GameObject.h"
 
 using namespace glm;
 
 class Camera
 {
 private:
+	const GameObject* objectInFocus;
+
 	glm::mat4 projectionMatrix;
 	glm::mat4 viewMatrix;
-//	glm::mat4 viewProjectionMatrix;
+	glm::mat4 viewProjectionMatrix;
 	
 	glm::vec3 position;
-	glm::vec2 velocity;
 	glm::vec3 scale;
 
 	glm::vec2 maxPositionXY;
 	glm::vec2 minPositionXY;
 	
-	float speed = 0.5;
+	const float speed = 1.f;
 	
 	void recalculateViewMatrix() 
 	{
 		viewMatrix = translate(mat4(1.0f), position);
+		viewMatrix = inverse(viewMatrix);
 		viewMatrix = viewMatrix * glm::scale(mat4(1.0f), scale);
-		
-	//	viewMatrix = inverse(viewMatrix);
-	//	viewProjectionMatrix = projectionMatrix * viewMatrix;
+		viewProjectionMatrix = projectionMatrix * viewMatrix;
 	}
 public:
 	
@@ -37,39 +38,31 @@ public:
 	Camera& operator = (const Camera&) = delete;
 	~Camera() = default;
 
-	Camera(const vec3& position, const vec2& leftDownMapPoint, const vec2& rightTopMapPoint, const vec2& scale)
-		: projectionMatrix(ortho(0.f, windowManger.screenSize.x, 0.f, windowManger.screenSize.y, -1.f, 1.f)),
-	//	: projectionMatrix(ortho(0.f, windowManger.screenSize.x / 10, 0.f, windowManger.screenSize.y / 10, -1.f, 1.f)),
-		  position(position), scale(vec3(scale, 0)),
-		  minPositionXY(leftDownMapPoint),
-		  maxPositionXY(rightTopMapPoint - windowManger.screenSize)
+	Camera(const vec2& position, const vec2& leftDownMapPoint, const vec2& rightTopMapPoint, const vec2& scale, const GameObject* objectInFocus)
+		: projectionMatrix(ortho(0.f, windowManger.screenSize.x, 0.f, windowManger.screenSize.y, -100.f, 100.f)),
+		position(vec3(position, 0)),
+		scale(vec3(scale, 0)),
+		minPositionXY(leftDownMapPoint),
+		maxPositionXY(rightTopMapPoint - windowManger.screenSize),
+		objectInFocus(objectInFocus)
 	{
-		velocity.x = 0;
-		velocity.y = 0;
 		recalculateViewMatrix();
 	}
 
-	void update(std::vector<bool>& keys, const vec2& cameraCenter)
+	void update()
 	{
-		position.x = cameraCenter.x;
-		position.y = cameraCenter.y;
+		position.x = (objectInFocus->getPosition().x + objectInFocus->getPivot().x) * scale.x - windowManger.screenSize.x * 0.5f;
+		position.y = (objectInFocus->getPosition().y + objectInFocus->getPivot().y) * scale.y - windowManger.screenSize.y * 0.5f;
 
-		if (position.x > maxPositionXY.x)
-			position.x = maxPositionXY.x;
-		else if (position.x < minPositionXY.x)
-			position.x = minPositionXY.x;
-
-		if (position.y > maxPositionXY.y)
-			position.y = maxPositionXY.y;
-		else if (position.y < minPositionXY.y)
-			position.y = minPositionXY.y;
+		position.x = clamp(position.x, minPositionXY.x, maxPositionXY.x);
+		position.y = clamp(position.y, minPositionXY.y, maxPositionXY.y);
 
 		recalculateViewMatrix();
 	}
 
-	glm::vec3 getPosition() const { return position; }
+	const glm::vec3& getPosition() const { return position; }
 
-	glm::mat4 getViewProjectionMatrix() const { return projectionMatrix * viewMatrix; }
+	const glm::mat4& getViewProjectionMatrix() const { return viewProjectionMatrix; }
 
 	glm::vec2 screenToWorldPoint(int x, int y)
 	{

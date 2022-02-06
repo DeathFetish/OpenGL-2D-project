@@ -5,9 +5,10 @@
 #include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
 
+#include "../Renderer/Renderer.h"
+
 #define windowManger WindowManger::get()
 
-using namespace glm;
 
 class WindowManger final
 {
@@ -17,7 +18,7 @@ private:
 	
 public:
 	GLFWwindow* window;
-	const vec2 screenSize = vec2(1200, 800);
+	glm::vec2 screenSize = glm::vec2(1200, 800);
 
 	WindowManger(const WindowManger&) = delete;
 	WindowManger& operator = (const WindowManger&) = delete;
@@ -45,8 +46,9 @@ public:
 
 		/*window = glfwCreateWindow(glfwGetVideoMode(glfwGetPrimaryMonitor())->width,
 			glfwGetVideoMode(glfwGetPrimaryMonitor())->height, "DeathWish",
-			glfwGetPrimaryMonitor(), nullptr);*/
-		
+			glfwGetPrimaryMonitor(), nullptr);
+		screenSize = glm::vec2(glfwGetVideoMode(glfwGetPrimaryMonitor())->width, glfwGetVideoMode(glfwGetPrimaryMonitor())->height);*/
+
 		if (!window)
 		{
 			glfwTerminate();
@@ -61,6 +63,9 @@ public:
 			std::cout << "gladLoadGL failed" << std::endl;
 			return false;
 		}
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
 		std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;

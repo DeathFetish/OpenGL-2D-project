@@ -37,19 +37,16 @@ namespace RenderEngine
 			glDrawElements(GL_TRIANGLES, indexBuffer.getCount(), GL_UNSIGNED_INT, nullptr);
 		}
 
-		void Renderer::setClearColor(const float r, const float g, const float b, const float a)
-		{
-			glClearColor(r, g, b, a);
-		}
-
-		void Renderer::setDepthTest(const bool enable)
+		void setDepthTest(const bool enable)
 		{
 			if (enable)
 				glEnable(GL_DEPTH_TEST);
 			else
 				glDisable(GL_DEPTH_TEST);
 		}
+		
+		void setClearColor(const float r, const float g, const float b, const float a) { glClearColor(r, g, b, a); }
 
-		void Renderer::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
+		void clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
 	};
 }

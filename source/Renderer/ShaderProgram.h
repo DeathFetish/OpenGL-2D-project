@@ -96,6 +96,11 @@ namespace RenderEngine
 			glUniform1i(glGetUniformLocation(id, name), value);
 		}
 
+		void setFloat(const char* name, const GLfloat value) const
+		{
+			glUniform1f(glGetUniformLocation(id, name), value);
+		}
+
 		void setMatrix(const char* name, const mat4& matrix) const
 		{
 			glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, value_ptr(matrix));

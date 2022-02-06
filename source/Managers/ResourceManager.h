@@ -42,10 +42,8 @@ private:
 	
 	string getFileString(string fileName)
 	{
-		//std::ifstream fin("../Resources/Shaders/" + fileName + ".txt", std::ios::in);
 		std::ifstream fin(directoryPath + fileName, std::ios::in);
-		
-		cout << directoryPath + fileName << endl;
+
 		if (!fin.is_open())
 			return string("");
 
@@ -65,7 +63,6 @@ public:
 		{
 			size_t found = directoryPath.find_last_of("/\\");
 			directoryPath = directoryPath.substr(0, found);
-			cout << directoryPath << endl;
 		}
 		directoryPath += "/";
 	}
@@ -199,23 +196,23 @@ public:
 		const string& spriteName,
 		const string& textureName,
 		const string& subTextureName,
-		const string& shaderName)
+		const string& shaderName,
+		const float layer)
 	{
-		auto texture = getTexture(textureName);
-		auto shader = getShader(shaderName);
 
-		Sprite* sprite = new Sprite(shader, texture, subTextureName);
+	//	std::cout << spriteName << "\t" << layer << std::endl;
+		Sprite* sprite = new Sprite(getShader(shaderName), getTexture(textureName), subTextureName, layer);
 		spritesMap.emplace(spriteName, sprite);
 		
 		return sprite;
 	}
 
-	Sprite* getSprite(const string& spriteName)
+	Sprite* getSprite(const std::string& spriteName)
 	{
 		auto it = spritesMap.find(spriteName);
 		if (it == spritesMap.end())
 		{
-			cout << "Sprite not found in getSprite(" << spriteName << ")" << endl;
+			std::cout << "Sprite not found in getSprite(" << spriteName << ")" << std::endl;
 			return nullptr;
 		}
 		return it->second;
@@ -223,10 +220,10 @@ public:
 
 	void ResourceManager::loadJSONResources(const std::string& JSONPath)
 	{
-		const string JSONString = getFileString(JSONPath);
+		const std::string JSONString = getFileString(JSONPath);
 		if (JSONString.empty())
 		{
-			cout << "No JSON resources file!" << endl;
+			std::cout << "No JSON resources file!" << std::endl;
 			exit(-1);
 		}
 
@@ -291,8 +288,8 @@ public:
 				const string textureAtlas = currentSprite["textureAtlas"].GetString();
 				const string shader = currentSprite["shader"].GetString();
 				const string subTexture = currentSprite["initialSubTexture"].GetString();
-
-				auto pSprite = loadSprite(name, textureAtlas, subTexture, shader);
+				const float layer = currentSprite["layer"].GetFloat();
+				auto pSprite = loadSprite(name, textureAtlas, subTexture, shader, layer);
 				if (!pSprite)
 				{
 					continue;
@@ -311,18 +308,12 @@ public:
 							offsetY = currentFrame["offsetY"].GetInt();
 						if (currentFrame.HasMember("offsetX"))
 							offsetY = currentFrame["offsetX"].GetInt();
-
-						
 						
 						const vec2 offset = vec2(offsetX, offsetY);
 						const string subTextureStr = currentFrame["subTexture"].GetString();
 						const double duration = currentFrame["duration"].GetDouble();
 						const auto pTextureAtlas = getTexture(textureAtlas);
 						const auto pSubTexture = pTextureAtlas->getSubTexture(subTextureStr);
-
-						/*cout << "___________" << endl;
-						cout << offsetX << "  " << offset.x << endl;
-						cout << offsetY << "  " << offset.y << endl;*/
 
 						framesDescriptions.emplace_back(pSubTexture.leftDownPoint, pSubTexture.rightTopPoint, offset, pSubTexture.size, duration);
 					}
