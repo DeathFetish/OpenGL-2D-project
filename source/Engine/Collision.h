@@ -3,46 +3,44 @@
 #include <glm/mat4x4.hpp>
 #include <vector>
 
-using namespace std;
-using namespace glm;
-
-float dot(const vec2& first, const vec2& second) { return first.x * second.x + first.y * second.y; }
+float dot(const glm::vec2& first, const glm::vec2& second) { return first.x * second.x + first.y * second.y; }
 
 class IShape
 {
 public:
-	virtual vec2 farthestPointInDirection(const vec2& direction) const = 0;
+	virtual glm::vec2 farthestPointInDirection(const glm::vec2& direction) const = 0;
 };
 
 class Circle : public IShape
 {
-public:
+private:
 	float radius;
-	vec2 center;
+	glm::vec2 center;
 
-	Circle(float radius, const vec2& center) : radius(radius), center(center) {}
+public:
+	Circle(float radius, const glm::vec2& center) : radius(radius), center(center) {}
 
-	vec2 farthestPointInDirection(const vec2& direction) const override
+	glm::vec2 farthestPointInDirection(const glm::vec2& direction) const override
 	{
 		float angle = atan2(direction.y, direction.x);
-		return vec2(center.x + (radius * cos(angle)), center.y + (radius * sin(angle)));
+		return glm::vec2(center.x + (radius * cos(angle)), center.y + (radius * sin(angle)));
 	}
 
-	void setCenter(const vec2& center) { this->center = center; }
+	void setCenter(const glm::vec2& center) { this->center = center; }
 };
 
 class Rectangle : public IShape
 {
 public:
-	vector<vec2> points;
+	std::vector<glm::vec2> points;
 
-	Rectangle() = default;
+	Rectangle(std::vector<glm::vec2> points) : points(points) {};
 
-	vec2 farthestPointInDirection(const vec2& direction) const 
+	glm::vec2 farthestPointInDirection(const glm::vec2& direction) const
 	{
-		float farthestDistance = -numeric_limits<float>::infinity();
+		float farthestDistance = -std::numeric_limits<float>::infinity();
 		float distanceInDirection;
-		vec2 farthestPoint(0.f, 0.f);
+		glm::vec2 farthestPoint(0.f, 0.f);
 		for (auto point = points.cbegin(); point != points.cend(); point++)
 		{
 			distanceInDirection = dot(*point, direction);
@@ -59,25 +57,25 @@ public:
 class Peplix
 {
 private:
-	vector<vec2> points;
+	std::vector<glm::vec2> points;
 
 public:
 	Peplix() = default;
 
-	void add(const vec2& point) { points.push_back(point); }
+	void add(const glm::vec2& point) { points.push_back(point); }
 
-	bool calculateDirection(vec2& result)
+	bool calculateDirection(glm::vec2& result)
 	{
-		vec2 a = points[points.size() - 1];
-		vec2 ao = - a;
+		glm::vec2 a = points[points.size() - 1];
+		glm::vec2 ao = -a;
 		
 		if (points.size() == 3)
 		{
-			vec2 b = points[1];
-			vec2 c = points[0];
-			vec2 ab = b - a;
-			vec2 ac = c - a;
-			vec2 abPerp(ab.y, -ab.x);
+			glm::vec2 b = points[1];
+			glm::vec2 c = points[0];
+			glm::vec2 ab = b - a;
+			glm::vec2 ac = c - a;
+			glm::vec2 abPerp(ab.y, -ab.x);
 
 			if (dot(abPerp, c) >= 0) 
 				abPerp = -abPerp;
@@ -89,7 +87,7 @@ public:
 				return true;
 			}
 
-			vec2 acPerp(ac.y, -ac.x);
+			glm::vec2 acPerp(ac.y, -ac.x);
 		
 			if (dot(acPerp, b) >= 0)
 				acPerp = -acPerp;
@@ -103,9 +101,9 @@ public:
 			return false;
 		}
 
-		vec2 b = points[0];
-		vec2 ab = b - a;
-		vec2 abPerp(ab.y, -ab.x);
+		glm::vec2 b = points[0];
+		glm::vec2 ab = b - a;
+		glm::vec2 abPerp(ab.y, -ab.x);
 
 		if (dot(abPerp, ao) <= 0)
 			abPerp = -abPerp;
@@ -115,7 +113,7 @@ public:
 	}
 };
 
-vec2 support(const IShape& a, const IShape& b, const vec2& direction)
+glm::vec2 support(const IShape& a, const IShape& b, const glm::vec2& direction)
 {
 	return a.farthestPointInDirection(direction) - b.farthestPointInDirection(-direction);
 }
@@ -123,7 +121,7 @@ vec2 support(const IShape& a, const IShape& b, const vec2& direction)
 bool calculateCollision(IShape& a, IShape& b)
 {
 	Peplix simplex;
-	vec2 direction(0, 1);
+	glm::vec2 direction(0, 1);
 	
 	simplex.add(support(a, b, direction));
 	direction = -direction;
@@ -132,7 +130,7 @@ bool calculateCollision(IShape& a, IShape& b)
 
 	while (repeat)
 	{
-		vec2 supportPoint = support(a, b, direction);
+		glm::vec2 supportPoint = support(a, b, direction);
 
 		if (dot(supportPoint, direction) <= 0)
 			return false;
