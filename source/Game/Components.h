@@ -96,34 +96,33 @@ public:
 class PhysicalObject : public GameObj
 {
 private:
-	TransformComponent* const transformComponent;
-	RenderComponent* const renderComponent;
-	PhysicComponent* const physicComponent;
+	TransformComponent* const TC;
+	RenderComponent* const RC;
+	PhysicComponent* const PC;
 
 public:
 	PhysicalObject(
 		TransformComponent* const transformComponent,
 		RenderComponent* const renderComponent,
 		PhysicComponent* const physicComponent)
-		: transformComponent(transformComponent),
-		renderComponent(renderComponent),
-		physicComponent(physicComponent) {}
+		: TC(transformComponent),
+		RC(renderComponent),
+		PC(physicComponent) {}
 
 	void render() override
 	{
-		std::cout << transformComponent->position.x << " " << transformComponent->position.y << std::endl;
-		std::cout << renderComponent->animator.getCurrentFrame() << std::endl;
-		renderComponent->sprite->render(transformComponent->position, transformComponent->rotation, renderComponent->animator.getCurrentFrame());
+	//	std::cout << TC->position.x << "\t" << TC->position.y;
+		RC->sprite->render(TC->position, TC->rotation, RC->size, RC->rotationPoint, RC->pivotOffset, RC->animator.getCurrentFrame());
 	}
 
 	void update() override { }
 
-	PhysicComponent* const getPhysicComponent() override { return physicComponent; }
+	PhysicComponent* const getPhysicComponent() override { return PC; }
 
 	~PhysicalObject()
 	{
-		if (!transformComponent) delete transformComponent;
-		if (!renderComponent) delete renderComponent;
-		if (!physicComponent) delete physicComponent;
+		if (!TC) delete TC;
+		if (!RC) delete RC;
+		if (!PC) delete PC;
 	}
 };

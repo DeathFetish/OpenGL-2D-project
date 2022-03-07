@@ -18,14 +18,14 @@
 class Cursor
 {
 private:
-	Sprite* cursor;
+//	Sprite* cursor;
 	SpriteAnimator* cursorAnimator;
 	glm::vec2 position;
 public:
 	Cursor()
 	{
-		cursor = resources.getSprite("Cursor");
-		cursorAnimator = new SpriteAnimator(cursor);
+	//	cursor = resources.getSprite("Cursor");
+	//	cursorAnimator = new SpriteAnimator(cursor);
 	}
 
 	void update()
@@ -36,7 +36,7 @@ public:
 
 	void render()
 	{
-		cursor->render(camera.screenToWorldPoint(gameHandler.getMousePoint()), 0.f, cursorAnimator->getCurrentFrame());
+//		cursor->render(camera.screenToWorldPoint(gameHandler.getMousePoint()), 0.f, cursorAnimator->getCurrentFrame());
 	}
 };
 
@@ -124,7 +124,7 @@ public:
 
 					const glm::vec2 pivotOffset = RCIt.HasMember("pivotOffsetX") ?
 						glm::vec2(RCIt["pivotOffsetX"].GetFloat(), RCIt["pivotOffsetY"].GetFloat()) :
-						glm::vec2(size.x / 2, size.y / 2);
+						glm::vec2(0, 0);
 
 					RC = new RenderComponent(spriteName, size, rotationPoint, pivotOffset);
 					std::cout << "_RC_" << std::endl;
@@ -284,7 +284,7 @@ public:
 
 			const glm::vec2 pivotOffset = legsRCIt.HasMember("pivotOffsetX") ?
 				glm::vec2(legsRCIt["pivotOffsetX"].GetFloat(), legsRCIt["pivotOffsetY"].GetFloat()) :
-				glm::vec2(size.x / 2, size.y / 2);
+				glm::vec2(0, 0);
 
 			legsRC = new RenderComponent(spriteName, size, rotationPoint, pivotOffset);
 		}
@@ -303,7 +303,7 @@ public:
 
 				const glm::vec2 pivotOffset = currentBodyRC.HasMember("pivotOffsetX") ?
 					glm::vec2(currentBodyRC["pivotOffsetX"].GetFloat(), currentBodyRC["pivotOffsetY"].GetFloat()) :
-					glm::vec2(size.x / 2, size.y / 2);
+					glm::vec2(0, 0);
 				bodyStatesRC.emplace(state, new RenderComponent(spriteName, size, rotationPoint, pivotOffset));
 			}
 		}
@@ -334,14 +334,13 @@ public:
 	{
 		resources.getShader("spriteShader")->setMatrix("viewProjectionMat", camera.getViewProjectionMatrix());
 
-		hero->render();
-		cursor->render();
 
 		for (auto it = gameObjects.begin(); it != gameObjects.end(); ++it)
 		{
 			(*it)->render();
-			//std::cout << "1" << std::endl;
 		}
+
+		hero->render();
 	}
 
 	void update(const double deltaTime) 
@@ -350,6 +349,6 @@ public:
 
 		camera.update();
 
-		cursor->update();
+//		cursor->update();
 	}
 };
