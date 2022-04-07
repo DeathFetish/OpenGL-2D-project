@@ -7,8 +7,14 @@ float dot(const glm::vec2& first, const glm::vec2& second) { return first.x * se
 
 class IShape
 {
+protected:
+	glm::vec2 pivotOffset;
+
 public:
+	IShape(glm::vec2 pivotOffset) : pivotOffset(pivotOffset) {}
+
 	virtual glm::vec2 farthestPointInDirection(const glm::vec2& direction) const = 0;
+	virtual void recalculateIShape(const glm::vec2& position, const float rotation) = 0;
 };
 
 class Circle : public IShape
@@ -18,7 +24,8 @@ private:
 	glm::vec2 center;
 
 public:
-	Circle(float radius, const glm::vec2& center) : radius(radius), center(center) {}
+	Circle(const glm::vec2& position, const float radius, const glm::vec2& pivotOffset)
+		: IShape(pivotOffset), radius(radius), center(position + pivotOffset) {}
 
 	glm::vec2 farthestPointInDirection(const glm::vec2& direction) const override
 	{
@@ -27,14 +34,32 @@ public:
 	}
 
 	void setCenter(const glm::vec2& center) { this->center = center; }
+
+	float getRadius() const { return radius; }
+
+	virtual void recalculateIShape(const glm::vec2& position, const float rotation) override
+	{
+		center = position + pivotOffset;
+	}
 };
 
 class Rectangle : public IShape
 {
 public:
 	std::vector<glm::vec2> points;
+	glm::vec2 rotationPoint;
+	glm::vec2 size;
 
-	Rectangle(std::vector<glm::vec2> points) : points(points) {};
+	Rectangle(const glm::vec2& position, const glm::vec2& size,const glm::vec2& rotationPoint, const glm::vec2& pivotOffset) : IShape(pivotOffset), size(size), rotationPoint(rotationPoint)
+	{
+		points =
+		{
+			glm::vec2(position.x + pivotOffset.x,		   position.y + pivotOffset.y),
+			glm::vec2(position.x + pivotOffset.x,		   position.y + pivotOffset.y + size.y),
+			glm::vec2(position.x + pivotOffset.x + size.x, position.y + pivotOffset.y + size.y),
+			glm::vec2(position.x + pivotOffset.x + size.x, position.y + pivotOffset.y),
+		};
+	}
 
 	glm::vec2 farthestPointInDirection(const glm::vec2& direction) const
 	{
@@ -51,6 +76,34 @@ public:
 			}
 		}
 		return farthestPoint;
+	}
+
+	virtual void recalculateIShape(const glm::vec2& position, const float rotation) override
+	{
+		glm::mat4 rotationMat = glm::rotate(glm::mat4(1.f), glm::radians(rotation), glm::vec3(0.f, 0.f, 1.f));
+
+		points[0].x = position.x + pivotOffset.x;
+		points[0].y = position.y + pivotOffset.y;
+		
+		points[1].x = position.x + pivotOffset.x;
+		points[1].y = position.y + pivotOffset.y + size.y;
+
+		points[2].x = position.x + pivotOffset.x + size.x;
+		points[2].y = position.y + pivotOffset.y + size.y;
+
+		points[3].x = position.x + pivotOffset.x + size.x;
+		points[3].y = position.y + pivotOffset.y;
+
+		for (unsigned int i = 0; i < 4; ++i)
+		{
+		//	std::cout << points[i].x << "\t" << points[i].y << std::endl;
+		//	std::cout << rotationPoint.x << "\t" << rotationPoint.y << std::endl;
+
+			points[i] = glm::vec2(rotationMat * glm::vec4(points[i] - rotationPoint - position, 0, 0)) + rotationPoint + position;
+			
+		//	std::cout << points[i].x << "\t" << points[i].y << std::endl;
+		}
+	//	std::cout << std::endl;
 	}
 };
 
@@ -118,7 +171,7 @@ glm::vec2 support(const IShape& a, const IShape& b, const glm::vec2& direction)
 	return a.farthestPointInDirection(direction) - b.farthestPointInDirection(-direction);
 }
 
-bool calculateCollision(IShape& a, IShape& b)
+bool calculateCollision(IShape& a, IShape& b, glm::vec2& outDirection = glm::vec2(0, 0))
 {
 	Peplix simplex;
 	glm::vec2 direction(0, 1);
@@ -138,5 +191,7 @@ bool calculateCollision(IShape& a, IShape& b)
 		simplex.add(supportPoint);
 		repeat = simplex.calculateDirection(direction);
 	}
+
+	outDirection = glm::normalize(direction);
 	return true;
 }

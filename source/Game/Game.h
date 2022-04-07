@@ -11,50 +11,121 @@
 #include "../Engine/Collision.h"
 
 #include "Components.h"
+#include "GameObject.h"
 #include "Hero.h"
+
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+#include <algorithm>
 
 #define game Game::get()
 
-class Cursor
+class ComponentsParser
 {
 private:
-//	Sprite* cursor;
-	SpriteAnimator* cursorAnimator;
-	glm::vec2 position;
+	static IShape* parseHitBox(const rapidjson::Value& jsonObject)
+	{
+		glm::vec2 pivotOffset = glm::vec2(0, 0);
+		
+		if (jsonObject.HasMember("pivotOffsetX"))
+			pivotOffset = glm::vec2(jsonObject["pivotOffsetX"].GetFloat(), jsonObject["pivotOffsetY"].GetFloat());
+
+		if (jsonObject.HasMember("radius"))
+		{
+			float radius = jsonObject["radius"].GetFloat();
+			return new Circle(glm::vec2(0, 0), radius, pivotOffset);
+		}
+		else
+		{
+			glm::vec2 size = glm::vec2(jsonObject["width"].GetFloat(), jsonObject["height"].GetFloat());
+			glm::vec2 rotationPoint = jsonObject.HasMember("rotationPointX") ?
+				glm::vec2(jsonObject["rotationPointX"].GetFloat(), jsonObject["rotationPointY"].GetFloat()) : glm::vec2(size.x / 2, size.y / 2);
+
+			return new Rectangle(glm::vec2(0, 0), size, rotationPoint, pivotOffset);
+		}
+	}
+
 public:
-	Cursor()
+	static TransformComponent* const parseTransformComponent(const rapidjson::Value& jsonObject)
 	{
-	//	cursor = resources.getSprite("Cursor");
-	//	cursorAnimator = new SpriteAnimator(cursor);
+		glm::vec2 position = glm::vec2(jsonObject["x"].GetFloat(), jsonObject["y"].GetFloat());
+		float rotation = jsonObject.HasMember("rotation") ? jsonObject["rotation"].GetFloat() : 0;
+		return new TransformComponent(position, rotation);
 	}
 
-	void update()
+	static RenderComponent* const parseRenderComponent(const rapidjson::Value& jsonObject)
 	{
-		this->position = position;
-		cursorAnimator->update(time.getDeltaTime());
+		const std::string spriteName = jsonObject["sprite"].GetString();
+		const float layer = jsonObject["layer"].GetFloat();
+
+		const glm::vec2 size = glm::vec2(jsonObject["width"].GetFloat(), jsonObject["height"].GetFloat());
+		
+		const glm::vec2 rotationPoint = jsonObject.HasMember("rotationPointX") ?
+			glm::vec2(jsonObject["rotationPointX"].GetFloat(), jsonObject["rotationPointY"].GetFloat()) :
+			glm::vec2(size.x / 2.f, size.y / 2.f);
+
+		const glm::vec2 pivotOffset = jsonObject.HasMember("pivotOffsetX") ?
+			glm::vec2(jsonObject["pivotOffsetX"].GetFloat(), jsonObject["pivotOffsetY"].GetFloat()) :
+			glm::vec2(0, 0);
+
+		return new RenderComponent(resources.getSprite(spriteName), size, rotationPoint, pivotOffset, layer);
 	}
 
-	void render()
+	static PhysicComponent* const parsePhysicComponent(const rapidjson::Value& jsonObject)
 	{
-//		cursor->render(camera.screenToWorldPoint(gameHandler.getMousePoint()), 0.f, cursorAnimator->getCurrentFrame());
+		IShape* walkHitBox = nullptr;
+		std::function<void(IGameObject*, IGameObject*, const glm::vec2&)> walkHitBoxOnCollision;
+		std::function<void(IGameObject*, IGameObject*, const glm::vec2&)> damageHitBoxOnCollision;
+		
+		std::string walkHitBoxCallbackName = jsonObject.HasMember("walkHitBoxCallbackName") ? jsonObject["walkHitBoxCallbackName"].GetString() : "default";
+		
+		walkHitBoxOnCollision = MapObject::getWalkHitBoxCallback(walkHitBoxCallbackName);
+		damageHitBoxOnCollision = walkHitBoxOnCollision;
+
+		if (jsonObject.HasMember("walkHitBox"))
+			walkHitBox = ComponentsParser::parseHitBox(jsonObject["walkHitBox"]);
+
+		IShape* damageHitBox = nullptr;
+		if (jsonObject.HasMember("damageHitBox"))
+			damageHitBox = ComponentsParser::parseHitBox(jsonObject["damageHitBox"]);
+
+		PhysicComponent* const PC = new PhysicComponent(walkHitBox, damageHitBox);
+		PC->setCallback(walkHitBoxOnCollision, damageHitBoxOnCollision);
+		return PC;
+	}
+
+	static MovableComponent* const parseMovableComponent(const rapidjson::Value& jsonObject)
+	{
+		const float speed = jsonObject["speed"].GetFloat();
+		return new MovableComponent(speed);
+	}
+
+	static ShadowComponent* const parseShadowComponent(const rapidjson::Value& jsonObject)
+	{
+		const float layer = jsonObject["layer"].GetFloat();
+		const glm::vec2 offset = glm::vec2(jsonObject["objectOffsetX"].GetFloat(), jsonObject["objectOffsetY"].GetFloat());
+		return new ShadowComponent(layer, offset);
 	}
 };
 
 class Game
 {
 private:
-
 	Hero* hero;
-	Cursor* cursor;
-	std::vector<PhysicalObject*> gameObjects;
+	
+	IGameObject* filmGrain;
+
+	std::vector<MapObject*> gameObjects;
+	std::vector<IGameObject*> renderableObjects;
+
+	std::map<std::string, rapidjson::Document*> gameObjectsSamples;
 
 	Game() {}
 
 	~Game()
 	{
 		if (!hero) delete hero;
-		if (!cursor) delete cursor;
-		
+
 		for (auto it = gameObjects.begin(); it != gameObjects.end(); ++it)
 			delete *it;
 		
@@ -72,7 +143,105 @@ public:
 		return object;
 	}
 
-	void loadJsonGameObjects(const std::string& JSONPath)
+	void loadLevel(const std::string& filePath)
+	{
+		const std::string JSONString = resources.getFileString(filePath);
+		if (JSONString.empty())
+		{
+			std::cout << "No JSON gameObjects file!" << std::endl;
+			exit(-1);
+		}
+
+		rapidjson::Document document;
+		rapidjson::ParseResult parseResult = document.Parse(JSONString.c_str());
+
+		if (!parseResult)
+		{
+			cout << "JSON parse error: " << rapidjson::GetParseError_En(parseResult.Code()) << "(" << parseResult.Offset() << ")" << endl;
+			cout << "In JSON file: " << filePath << endl;
+			exit(-1);
+		}
+
+		auto gameObjectsIt = document.FindMember("objects");
+		if (gameObjectsIt != document.MemberEnd())
+		{
+			for (const auto& currentGameObject : gameObjectsIt->value.GetArray())
+			{
+				std::string name = currentGameObject["name"].GetString();
+				TransformComponent* TC = ComponentsParser::parseTransformComponent(currentGameObject);
+				
+				auto sampleObject = gameObjectsSamples[name];
+				
+				std::string tag = sampleObject->HasMember("tag") ? (*sampleObject)["tag"].GetString() : "";
+
+				RenderComponent* RC = nullptr;
+				if (sampleObject->HasMember("RenderComponent"))
+					RC = ComponentsParser::parseRenderComponent((*sampleObject)["RenderComponent"]);
+
+				PhysicComponent* PC = nullptr;
+				if (sampleObject->HasMember("PhysicComponent"))
+					PC = ComponentsParser::parsePhysicComponent((*sampleObject)["PhysicComponent"]);
+
+				MovableComponent* MC = nullptr;
+				if (sampleObject->HasMember("MovableComponent"))
+					MC = ComponentsParser::parseMovableComponent((*sampleObject)["MovableComponent"]);
+
+				ShadowComponent* SC = nullptr;
+				if (sampleObject->HasMember("ShadowComponent"))
+					SC = ComponentsParser::parseShadowComponent((*sampleObject)["ShadowComponent"]);
+
+				MapObject* obj = new MapObject(tag, TC, RC, PC, MC, SC);
+				string updateFunctionName = sampleObject->HasMember("UpdateFunction") ? (*sampleObject)["UpdateFunction"].GetString() : "default";
+				string renderFunctionName = sampleObject->HasMember("RenderFunction") ? (*sampleObject)["RenderFunction"].GetString() : "default";
+
+				obj->setUpdateFunction(MapObject::getUpdateFunction(updateFunctionName));
+				obj->setRenderFunction(MapObject::getRenderFunction(renderFunctionName));
+
+				if (name == "FilmGrain")
+					filmGrain = obj;
+				
+				gameObjects.push_back(obj);
+				if (RC)	renderableObjects.push_back(obj);
+			}
+		}
+	}
+
+	void loadGameObjectsSamples(const std::string& filePath)
+	{
+		const std::string JSONString = resources.getFileString(filePath);
+		if (JSONString.empty())
+		{
+			std::cout << "No JSON gameObjects file!" << std::endl;
+			exit(-1);
+		}
+
+		rapidjson::Document sourceDocument;
+		rapidjson::ParseResult parseResult = sourceDocument.Parse(JSONString.c_str());
+
+		if (!parseResult)
+		{
+			cout << "JSON parse error: " << rapidjson::GetParseError_En(parseResult.Code()) << "(" << parseResult.Offset() << ")" << endl;
+			cout << "In JSON file: " << filePath << endl;
+			exit(-1);
+		}
+
+		auto gameObjectsIt = sourceDocument.FindMember("gameObjects");
+		if (gameObjectsIt != sourceDocument.MemberEnd())
+		{
+			const auto objects = gameObjectsIt->value.GetArray();
+			for (auto i = 0; i < objects.Size(); i++)
+			{
+				string name = objects[i]["name"].GetString();
+
+				rapidjson::Document* outDocument = new rapidjson::Document();
+				outDocument->CopyFrom(objects[i], outDocument->GetAllocator());
+
+				gameObjectsSamples.insert(std::make_pair(name, outDocument));
+			}
+		}
+	}
+
+	void loadHero(const std::string& JSONPath)
 	{
 		const std::string JSONString = resources.getFileString(JSONPath);
 		if (JSONString.empty())
@@ -90,242 +259,41 @@ public:
 			cout << "In JSON file: " << JSONPath << endl;
 			exit(-1);
 		}
-		std::cout << "_0_" << std::endl;
-
-		auto gameObjectsIt = document.FindMember("gameObjects");
-		if (gameObjectsIt != document.MemberEnd())
-		{
-			std::cout << "start: gameObjects parsing" << std::endl;
-
-			for (const auto& currentGameObject : gameObjectsIt->value.GetArray())
-			{
-				TransformComponent* TC = nullptr;
-				RenderComponent* RC = nullptr;
-				PhysicComponent* PC = nullptr;
-
-				if (currentGameObject.HasMember("TransformComponent"))
-				{
-					const auto& TCIt = currentGameObject["TransformComponent"];
-					const glm::vec2 position = glm::vec2(TCIt["x"].GetFloat(), TCIt["y"].GetFloat());
-					const float rotation = TCIt["rotation"].GetFloat();
-					TC = new TransformComponent(position, rotation);
-					std::cout << "_TC_" << std::endl;
-				}
-
-				if (currentGameObject.HasMember("RenderComponent"))
-				{
-					const auto& RCIt = currentGameObject["RenderComponent"];
-					const std::string spriteName = RCIt["sprite"].GetString();
-					const glm::vec2 size = glm::vec2(RCIt["width"].GetFloat(), RCIt["height"].GetFloat());
-
-					const glm::vec2 rotationPoint = RCIt.HasMember("rotationPointX") ?
-						glm::vec2(RCIt["rotationPointX"].GetFloat(), RCIt["rotationPointY"].GetFloat()) :
-						glm::vec2(size.x / 2, size.y / 2);
-
-					const glm::vec2 pivotOffset = RCIt.HasMember("pivotOffsetX") ?
-						glm::vec2(RCIt["pivotOffsetX"].GetFloat(), RCIt["pivotOffsetY"].GetFloat()) :
-						glm::vec2(0, 0);
-
-					RC = new RenderComponent(spriteName, size, rotationPoint, pivotOffset);
-					std::cout << "_RC_" << std::endl;
-				}
-
-				if (currentGameObject.HasMember("PhysicComponent"))
-				{
-					const auto& PCIt = currentGameObject["PhysicComponent"];
-
-					IShape* walkHitBox;
-					if (PCIt.HasMember("walkHitBox"))
-					{
-						const auto& walkHitBoxIt = PCIt["walkHitBox"];
-						if (walkHitBoxIt.HasMember("radius"))
-						{
-							float radius = walkHitBoxIt["radius"].GetFloat();
-							glm::vec2 center = glm::vec2(walkHitBoxIt["x"].GetFloat(), walkHitBoxIt["y"].GetFloat());
-							walkHitBox = new Circle(radius, center);
-						}
-						else
-						{
-							float width = walkHitBoxIt["width"].GetFloat();
-							float height = walkHitBoxIt["height"].GetFloat();
-							std::vector<glm::vec2> points =
-							{
-								glm::vec2(TC->position.x, TC->position.y),
-								glm::vec2(TC->position.x, TC->position.y + height),
-								glm::vec2(TC->position.x + width, TC->position.y + height),
-								glm::vec2(TC->position.x + width, TC->position.y),
-							};
-							walkHitBox = new Rectangle(points);
-						}
-					}
-
-					IShape* damageHitBox;
-					if (PCIt.HasMember("damageHitBox"))
-					{
-						const auto& damageHitBoxIt = PCIt["damageHitBox"];
-						if (damageHitBoxIt.HasMember("radius"))
-						{
-							float radius = damageHitBoxIt["radius"].GetFloat();
-							glm::vec2 center = glm::vec2(damageHitBoxIt["x"].GetFloat(), damageHitBoxIt["y"].GetFloat());
-							damageHitBox = new Circle(radius, center);
-						}
-						else
-						{
-							float width = damageHitBoxIt["width"].GetFloat();
-							float height = damageHitBoxIt["height"].GetFloat();
-							std::vector<glm::vec2> points =
-							{
-								glm::vec2(TC->position.x, TC->position.y),
-								glm::vec2(TC->position.x, TC->position.y + height),
-								glm::vec2(TC->position.x + width, TC->position.y + height),
-								glm::vec2(TC->position.x + width, TC->position.y),
-							};
-							damageHitBox = new Rectangle(points);
-						}
-					}
-
-					PC = new PhysicComponent(walkHitBox, damageHitBox);
-				}
-
-				std::cout << "final" << std::endl;
-
-				gameObjects.emplace_back(new PhysicalObject(TC, RC, PC));
-			}
-		}
 
 		const auto& HeroObjIt = document["Hero"];
-		TransformComponent* bodyTC = nullptr;
-		TransformComponent* legsTC = nullptr;
-		MovableComponent* MC = nullptr;
-		PhysicComponent* PC = nullptr;
-		RenderComponent* legsRC = nullptr;
+		
+		TransformComponent* bodyTC = ComponentsParser::parseTransformComponent(HeroObjIt["bodyTransformComponent"]);
+		TransformComponent* legsTC = ComponentsParser::parseTransformComponent(HeroObjIt["legsTransformComponent"]);
+		MovableComponent* MC = ComponentsParser::parseMovableComponent(HeroObjIt["MovableComponent"]);
+		PhysicComponent* PC = ComponentsParser::parsePhysicComponent(HeroObjIt["PhysicComponent"]);
+		RenderComponent* legsRC = ComponentsParser::parseRenderComponent(HeroObjIt["legsRenderComponent"]);
+
 		std::map<std::string, RenderComponent* const> bodyStatesRC;
 
+		auto bodyStatesRCIt = HeroObjIt.FindMember("bodyStatesRenderComponents");
+		for (const auto& currentBodyRC : bodyStatesRCIt->value.GetArray())
 		{
-			const auto& bodyTCIt = HeroObjIt["bodyTransformComponent"];
-			const glm::vec2 position = glm::vec2(bodyTCIt["x"].GetFloat(), bodyTCIt["y"].GetFloat());
-			const float rotation = bodyTCIt["rotation"].GetFloat();
-			bodyTC = new TransformComponent(position, rotation);
-		}
-
-		{
-			const auto& legsTCIt = HeroObjIt["legsTransformComponent"];
-			const glm::vec2 position = glm::vec2(legsTCIt["x"].GetFloat(), legsTCIt["y"].GetFloat());
-			const float rotation = legsTCIt["rotation"].GetFloat();
-			legsTC = new TransformComponent(position, rotation);
-		}
-
-		{
-			const auto& MCIt = HeroObjIt["MovableComponent"];
-			const float speed = MCIt["speed"].GetFloat();
-			MC = new MovableComponent(speed);
-		}
-
-		{
-			const auto& PCIt = HeroObjIt["PhysicComponent"];
-
-			IShape* walkHitBox;
-			const auto& walkHitBoxIt = PCIt["walkHitBox"];
-			if (walkHitBoxIt.HasMember("radius"))
-			{
-				float radius = walkHitBoxIt["radius"].GetFloat();
-				glm::vec2 center = glm::vec2(walkHitBoxIt["x"].GetFloat(), walkHitBoxIt["y"].GetFloat());
-				walkHitBox = new Circle(radius, center);
-			}
-			else
-			{
-				float width = walkHitBoxIt["width"].GetFloat();
-				float height = walkHitBoxIt["height"].GetFloat();
-				std::vector<glm::vec2> points =
-				{
-					glm::vec2(bodyTC->position.x, bodyTC->position.y),
-					glm::vec2(bodyTC->position.x, bodyTC->position.y + height),
-					glm::vec2(bodyTC->position.x + width, bodyTC->position.y + height),
-					glm::vec2(bodyTC->position.x + width, bodyTC->position.y),
-				};
-				walkHitBox = new Rectangle(points);
-				std::cout << "Rect_1" << std::endl;
-
-			}
-
-			IShape* damageHitBox;
-			const auto& damageHitBoxIt = PCIt["damageHitBox"];
-			if (damageHitBoxIt.HasMember("radius"))
-			{
-				float radius = damageHitBoxIt["radius"].GetFloat();
-				glm::vec2 center = glm::vec2(damageHitBoxIt["x"].GetFloat(), damageHitBoxIt["y"].GetFloat());
-				damageHitBox = new Circle(radius, center);
-			}
-			else
-			{
-				float width = damageHitBoxIt["width"].GetFloat();
-				float height = damageHitBoxIt["height"].GetFloat();
-				std::vector<glm::vec2> points =
-				{
-					glm::vec2(bodyTC->position.x, bodyTC->position.y),
-					glm::vec2(bodyTC->position.x, bodyTC->position.y + height),
-					glm::vec2(bodyTC->position.x + width, bodyTC->position.y + height),
-					glm::vec2(bodyTC->position.x + width, bodyTC->position.y),
-				};
-				damageHitBox = new Rectangle(points);
-			}
-
-			PC = new PhysicComponent(walkHitBox, damageHitBox);
-		}
-
-		{
-			const auto& legsRCIt = HeroObjIt["legsRenderComponent"];
-			const std::string spriteName = legsRCIt["sprite"].GetString();
-			const glm::vec2 size = glm::vec2(legsRCIt["width"].GetFloat(), legsRCIt["height"].GetFloat());
-
-			const glm::vec2 rotationPoint = legsRCIt.HasMember("rotationPointX") ?
-				glm::vec2(legsRCIt["rotationPointX"].GetFloat(), legsRCIt["rotationPointY"].GetFloat()) :
-				glm::vec2(size.x / 2, size.y / 2);
-
-			const glm::vec2 pivotOffset = legsRCIt.HasMember("pivotOffsetX") ?
-				glm::vec2(legsRCIt["pivotOffsetX"].GetFloat(), legsRCIt["pivotOffsetY"].GetFloat()) :
-				glm::vec2(0, 0);
-
-			legsRC = new RenderComponent(spriteName, size, rotationPoint, pivotOffset);
-		}
-
-		{
-			auto bodyStatesRCIt = HeroObjIt.FindMember("bodyStatesRenderComponents");
-			for (const auto& currentBodyRC : bodyStatesRCIt->value.GetArray())
-			{
-				const std::string state = currentBodyRC["state"].GetString();
-				const std::string spriteName = currentBodyRC["sprite"].GetString();
-				const glm::vec2 size = glm::vec2(currentBodyRC["width"].GetFloat(), currentBodyRC["height"].GetFloat());
-
-				const glm::vec2 rotationPoint = currentBodyRC.HasMember("rotationPointX") ?
-					glm::vec2(currentBodyRC["rotationPointX"].GetFloat(), currentBodyRC["rotationPointY"].GetFloat()) :
-					glm::vec2(size.x / 2, size.y / 2);
-
-				const glm::vec2 pivotOffset = currentBodyRC.HasMember("pivotOffsetX") ?
-					glm::vec2(currentBodyRC["pivotOffsetX"].GetFloat(), currentBodyRC["pivotOffsetY"].GetFloat()) :
-					glm::vec2(0, 0);
-				bodyStatesRC.emplace(state, new RenderComponent(spriteName, size, rotationPoint, pivotOffset));
-			}
+			const std::string state = currentBodyRC["state"].GetString();
+			bodyStatesRC.emplace(state, ComponentsParser::parseRenderComponent(currentBodyRC));
 		}
 
 		hero = new Hero(
 			const_cast<TransformComponent* const>(bodyTC),
 			const_cast<TransformComponent* const>(legsTC),
-			const_cast<MovableComponent* const>(MC), 
-			const_cast<PhysicComponent* const>(PC), 
+			const_cast<MovableComponent* const>(MC),
+			const_cast<PhysicComponent* const>(PC),
 			const_cast<RenderComponent* const>(legsRC),
 			bodyStatesRC);
+
+		renderableObjects.push_back(hero);
 	}
 
 	bool init()
 	{
-		camera.init(glm::vec2(0, 0), glm::vec2(0, 0), glm::vec2(2222000, 2222000), glm::vec2(3.5f, 3.5f), hero);
-		cursor = new Cursor();
-
-		auto spriteShaderProgram = resources.getShader("spriteShader");
-		spriteShaderProgram->use();
-		spriteShaderProgram->setMatrix("viewProjectionMat", camera.getViewProjectionMatrix());
-		spriteShaderProgram->setInt("tex", 0);
+		camera.init(glm::vec2(0, 0), glm::vec2(0, 0), glm::vec2(4000, 4000), glm::vec2(4.f, 4.f), hero);
+		
+		std::sort(renderableObjects.begin(), renderableObjects.end(), [](IGameObject* a, IGameObject* b) -> bool
+			{ return a->getRenderComponent()->layer < b->getRenderComponent()->layer; });
 
 		return true;
 	}
@@ -333,22 +301,28 @@ public:
 	void render()
 	{
 		resources.getShader("spriteShader")->setMatrix("viewProjectionMat", camera.getViewProjectionMatrix());
+		resources.getShader("shadowShader")->setMatrix("viewProjectionMat", camera.getViewProjectionMatrix());
+		resources.getShader("filmGrainShader")->setMatrix("viewProjectionMat", camera.getViewProjectionMatrix());
 
+		filmGrain->getTransformComponent()->position = camera.getPosition();
 
-		for (auto it = gameObjects.begin(); it != gameObjects.end(); ++it)
+		for (auto it = renderableObjects.begin(); it != renderableObjects.end(); ++it)
 		{
 			(*it)->render();
 		}
 
-		hero->render();
+		std::cout << "__________" << std::endl;
 	}
 
 	void update(const double deltaTime) 
 	{
-		hero->update();
+		hero->update(gameObjects);
+
+		for (auto it = gameObjects.begin(); it != gameObjects.end(); ++it)
+		{
+			(*it)->update();
+		}
 
 		camera.update();
-
-//		cursor->update();
 	}
 };

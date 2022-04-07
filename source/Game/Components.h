@@ -2,11 +2,13 @@
 
 #include <glm/vec2.hpp>
 #include <functional>
-
+#include "GameObject.h"
 #include "../Engine/Collision.h"
 #include "../Managers/ResourceManager.h"
 #include "../Renderer/Sprite.h"
 #include "../Renderer/SpriteAnimator.h"
+
+class IGameObject;
 
 class TransformComponent
 {
@@ -33,17 +35,23 @@ public:
 	glm::vec2 size;
 	glm::vec2 rotationPoint;
 	glm::vec2 pivotOffset;
+	float layer;
 
 	RenderComponent() = delete;
 	RenderComponent(const RenderComponent&) = delete;
 	RenderComponent& operator = (const RenderComponent&) = delete;
 
 	RenderComponent(
-		const std::string& spriteName,
+		RenderEngine::Sprite* sprite,
 		const glm::vec2& size,
 		const glm::vec2& rotationPoint,
-		const glm::vec2& pivotOffset)
-		: sprite(resources.getSprite(spriteName)), size(size), rotationPoint(rotationPoint), pivotOffset(pivotOffset), animator(sprite) {}
+		const glm::vec2& pivotOffset,
+		const float layer)
+		: sprite(sprite), size(size), rotationPoint(rotationPoint),
+		pivotOffset(pivotOffset), animator(sprite), layer(layer) 
+	{
+		std::cout << layer << std::endl;
+	}
 
 	~RenderComponent() = default;
 };
@@ -51,10 +59,12 @@ public:
 class PhysicComponent
 {
 public:
+
 	IShape* walkHitBox;
 	IShape* damageHitBox;
-	std::function<void()> walkHitboxCallback;
-	std::function<void()> damageHitboxCallback;
+	
+	std::function<void(IGameObject*, IGameObject*, const glm::vec2&)> walkHitBoxOnCollision;
+	std::function<void(IGameObject*, IGameObject*, const glm::vec2&)> damageHitBoxOnCollision;
 
 	PhysicComponent() = delete;
 	PhysicComponent(const PhysicComponent&) = delete;
@@ -62,6 +72,14 @@ public:
 
 	PhysicComponent(IShape* walkHitBox, IShape* damgeHitBox) 
 		: walkHitBox(walkHitBox), damageHitBox(damgeHitBox) {}
+
+	void setCallback(
+		const std::function<void(IGameObject*, IGameObject*, const glm::vec2&)> walkHitBoxOnCollision,
+		const std::function<void(IGameObject*, IGameObject*, const glm::vec2&)> damageHitBoxOnCollision)
+	{
+		this->walkHitBoxOnCollision = walkHitBoxOnCollision;
+		this->damageHitBoxOnCollision = damageHitBoxOnCollision;
+	}
 
 	~PhysicComponent()
 	{
@@ -85,44 +103,17 @@ public:
 	~MovableComponent() = default;
 };
 
-class GameObj
+class ShadowComponent
 {
-public:
-	virtual void render() = 0;
-	virtual void update() = 0;
-	virtual PhysicComponent* const getPhysicComponent() = 0;
-};
+public: 
+	float layer;
+	glm::vec2 objectOffset;
 
-class PhysicalObject : public GameObj
-{
-private:
-	TransformComponent* const TC;
-	RenderComponent* const RC;
-	PhysicComponent* const PC;
+	ShadowComponent() = delete;
+	ShadowComponent(const ShadowComponent&) = delete;
+	ShadowComponent& operator = (const ShadowComponent&) = delete;
 
-public:
-	PhysicalObject(
-		TransformComponent* const transformComponent,
-		RenderComponent* const renderComponent,
-		PhysicComponent* const physicComponent)
-		: TC(transformComponent),
-		RC(renderComponent),
-		PC(physicComponent) {}
+	ShadowComponent(const float layer, const glm::vec2& objectOffset) : layer(layer), objectOffset(objectOffset) {}
 
-	void render() override
-	{
-	//	std::cout << TC->position.x << "\t" << TC->position.y;
-		RC->sprite->render(TC->position, TC->rotation, RC->size, RC->rotationPoint, RC->pivotOffset, RC->animator.getCurrentFrame());
-	}
-
-	void update() override { }
-
-	PhysicComponent* const getPhysicComponent() override { return PC; }
-
-	~PhysicalObject()
-	{
-		if (!TC) delete TC;
-		if (!RC) delete RC;
-		if (!PC) delete PC;
-	}
+	~ShadowComponent() = default;
 };
