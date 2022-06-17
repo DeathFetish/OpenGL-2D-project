@@ -1,0 +1,8 @@
+
+class CollisionHandler
+{
+private:
+
+public:
+
+};

@@ -1,0 +1,160 @@
+{
+  "GameObject": [
+    {
+      "name": "Hero",
+      "tag": "hero",
+      "HeroComponent": {},
+      "RenderComponent": {
+        "renderEnable": true,
+        "animationEnable": false,
+        "layer": 5,
+        "Sprite": "heroBody",
+        "Shader": "spriteShader",
+        "currentAnimation": "bodyWalk",
+
+        "Animations": [
+          {
+            "name": "bodyWalk",
+            "sizeX": 26,
+            "sizeY": 18,
+            "localPositionX": 0,
+            "localPositionY": -1,
+            "rotationPointX": 13,
+            "rotationPointY": 9,
+            "Frames": [
+              {
+                "subTexture": "HeroWalk0",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk1",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk2",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk1",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk0",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk3",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk4",
+                "duration": 120
+              },
+              {
+                "subTexture": "HeroWalk3",
+                "duration": 120
+              }
+            ]
+          },
+
+          {
+            "name": "punch",
+            "sizeX": 27,
+            "sizeY": 35,
+            "localPositionX": 0,
+            "localPositionY": -1,
+            "rotationPointX": 13,
+            "rotationPointY": 9,
+
+            "Frames": [
+              {
+                "subTexture": "HeroPunch0",
+                "duration": 50
+              },
+              {
+                "subTexture": "HeroPunch1",
+                "duration": 50
+              },
+              {
+                "subTexture": "HeroPunch2",
+                "duration": 50
+              },
+              {
+                "subTexture": "HeroPunch3",
+                "duration": 50
+              },
+              {
+                "subTexture": "HeroPunch4",
+                "duration": 50
+              },
+              {
+                "subTexture": "HeroPunch5",
+                "duration": 50
+              }
+            ]
+          }
+        ]
+      },
+      "GameObjects": [
+        {
+          "tag": "body",
+          "TransformComponent": {
+            "x": -1,
+            "y": -1
+          }
+
+        }
+      ]
+    },
+
+    {
+      "name": "VerticalRedWall",
+      "PhysicComponent": {
+        "heightAreaMin": 0,
+        "heightAreaMax": 10,
+        "rotationPointX": 4,
+        "rotationPointY": 16,
+        "w": 8,
+        "h": 32
+      }
+    },
+
+    {
+      "name": "Camera",
+      "tag": "mainCamera",
+      "CameraComponent": {
+        "scaleX": 4,
+        "scaleY": 4,
+        "maxX": 1000,
+        "maxY": 1000,
+        "minX": 0,
+        "minY": 0
+      },
+      "RenderComponent": {
+        "renderEnable": true,
+        "animationEnable": false,
+        "layer": 0,
+        "Sprite": "filmGrain",
+        "Shader": "filmGrainShader",
+        "currentAnimation": "default",
+        "Animations": [
+          {
+            "name": "default",
+            "sizeX": 300,
+            "sizeY": 200,
+            "localPositionX": 0,
+            "localPositionY": 0,
+            "rotationPointX": 0,
+            "rotationPointY": 0,
+            "Frames": [
+              {
+                "subTexture": "default",
+                "duration": 100
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

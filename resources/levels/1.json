@@ -1,0 +1,38 @@
+{
+  "GameObject": [
+    {
+      "name": "Camera",
+      "TransformComponent": {
+        "x": 0,
+        "y": 0
+      }
+    },
+
+    {
+      "name": "VerticalRedWall",
+      "TransformComponent": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0
+      }
+    },
+
+    {
+      "name": "VerticalRedWall",
+      "TransformComponent": {
+        "x": 0,
+        "y": 32,
+        "rotation": 0
+      }
+    },
+
+    {
+      "name": "Hero",
+      "TransformComponent": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0
+      }
+    }
+  ]
+}

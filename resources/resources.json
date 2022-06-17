@@ -1,0 +1,336 @@
+{
+	"Shaders": [
+		{
+			"name": "spriteShader",
+			"vertexPath": "resources\\shaders\\default.vert",
+			"fragmentPath": "resources\\shaders\\default.frag"
+		},
+
+		{
+			"name": "filmGrainShader",
+			"vertexPath": "resources\\shaders\\filmGrain.vert",
+			"fragmentPath": "resources\\shaders\\filmGrain.frag"
+		},
+
+		{
+			"name": "shadowShader",
+			"vertexPath": "resources\\shaders\\default.vert",
+			"fragmentPath": "resources\\shaders\\shadow.frag"
+		}
+	],
+
+	"Textures": [
+		{
+			"name": "heroBody",
+			"path": "resources\\textures\\hero.png",
+			"subTextures": [
+				{
+					"name": "HeroWalk0",
+					"x": 0,
+					"y": 0,
+					"w": 26,
+					"h": 18
+				},
+				{
+					"name": "HeroWalk1",
+					"x": 26,
+					"y": 0,
+					"w": 26,
+					"h": 18
+				},
+				{
+					"name": "HeroWalk2",
+					"x": 52,
+					"y": 0,
+					"w": 26,
+					"h": 18
+				},
+				{
+					"name": "HeroWalk3",
+					"x": 78,
+					"y": 0,
+					"w": 26,
+					"h": 18
+				},
+				{
+					"name": "HeroWalk4",
+					"x": 104,
+					"y": 0,
+					"w": 26,
+					"h": 18
+				},
+
+				{
+					"name": "HeroPunch0",
+					"x": 0,
+					"y": 18,
+					"w": 27,
+					"h": 35
+				},
+				{
+					"name": "HeroPunch1",
+					"x": 27,
+					"y": 18,
+					"w": 27,
+					"h": 35
+				},
+				{
+					"name": "HeroPunch2",
+					"x": 54,
+					"y": 18,
+					"w": 27,
+					"h": 35
+				},
+				{
+					"name": "HeroPunch3",
+					"x": 81,
+					"y": 18,
+					"w": 27,
+					"h": 35
+				},
+				{
+					"name": "HeroPunch4",
+					"x": 108,
+					"y": 18,
+					"w": 27,
+					"h": 35
+				},
+				{
+					"name": "HeroPunch5",
+					"x": 135,
+					"y": 18,
+					"w": 27,
+					"h": 35
+				},
+				{
+					"name": "HeroWalkBat0",
+					"x": 0,
+					"y": 55,
+					"w": 34,
+					"h": 20
+				},
+				{
+					"name": "HeroWalkBat1",
+					"x": 35,
+					"y": 55,
+					"w": 34,
+					"h": 20
+				},
+				{
+					"name": "HeroWalkBat2",
+					"x": 70,
+					"y": 55,
+					"w": 34,
+					"h": 20
+				},
+				{
+					"name": "HeroWalkBat3",
+					"x": 105,
+					"y": 55,
+					"w": 34,
+					"h": 20
+				},
+				{
+					"name": "HeroWalkBat4",
+					"x": 140,
+					"y": 55,
+					"w": 34,
+					"h": 20
+				}
+			]
+		},
+
+		{
+			"name": "guns",
+			"path": "resources\\textures\\guns.png",
+			"subTextures": [
+				{
+					"name": "bat",
+					"x": 0,
+					"y": 0,
+					"w": 24,
+					"h": 4
+				}
+			]
+		},
+
+		{
+			"name": "heroLegs",
+			"path": "resources\\textures\\heroLegs.png",
+			"subTextures": [
+				{
+					"name": "Step0",
+					"x": 0,
+					"y": 0,
+					"w": 1,
+					"h": 1
+				},
+				{
+					"name": "Step1",
+					"x": 0,
+					"y": 0,
+					"w": 16,
+					"h": 29
+				},
+				{
+					"name": "Step2",
+					"x": 16,
+					"y": 0,
+					"w": 16,
+					"h": 29
+				},
+				{
+					"name": "Step3",
+					"x": 32,
+					"y": 0,
+					"w": 16,
+					"h": 29
+				},
+				{
+					"name": "Step4",
+					"x": 48,
+					"y": 0,
+					"w": 16,
+					"h": 29
+				},
+				{
+					"name": "Step5",
+					"x": 64,
+					"y": 0,
+					"w": 16,
+					"h": 29
+				},
+				{
+					"name": "Step6",
+					"x": 80,
+					"y": 0,
+					"w": 16,
+					"h": 29
+				}
+			]
+		},
+
+		{
+			"name": "floors",
+			"path": "resources\\textures\\floors.png",
+			"subTextures": [
+				{
+					"name": "LightFloor1",
+					"x": 0,
+					"y": 0,
+					"w": 16,
+					"h": 16
+				},
+				{
+					"name": "LightFloor2",
+					"x": 16,
+					"y": 0,
+					"w": 16,
+					"h": 16
+				},
+				{
+					"name": "LightFloor3",
+					"x": 32,
+					"y": 0,
+					"w": 16,
+					"h": 16
+				},
+				{
+					"name": "LightFloor4",
+					"x": 0,
+					"y": 16,
+					"w": 16,
+					"h": 16
+				},
+				{
+					"name": "LightFloor5",
+					"x": 16,
+					"y": 16,
+					"w": 16,
+					"h": 16
+				},
+				{
+					"name": "LightFloor6",
+					"x": 32,
+					"y": 16,
+					"w": 16,
+					"h": 16
+				}
+			]
+		},
+
+		{
+			"name": "walls",
+			"path": "resources\\textures\\walls.png",
+			"subTextures": [
+				{
+					"name": "verticalRedWall",
+					"x": 16,
+					"y": 0,
+					"w": 8,
+					"h": 32
+				},
+				{
+					"name": "horizontalRedWall",
+					"x": 32,
+					"y": 16,
+					"w": 32,
+					"h": 8
+				},
+				{
+					"name": "injectionRedWall",
+					"x": 64,
+					"y": 16,
+					"w": 8,
+					"h": 8
+				}
+			]
+		},
+
+		{
+			"name": "doors",
+			"path": "resources\\textures\\doors.png",
+			"subTextures": [
+				{
+					"name": "verticalDoor",
+					"x": 0,
+					"y": 0,
+					"w": 4,
+					"h": 32
+				},
+				{
+					"name": "horizontalDoor",
+					"x": 4,
+					"y": 0,
+					"w": 32,
+					"h": 4
+				}
+			]
+		},
+
+		{
+			"name": "filmGrain",
+			"path": "resources\\textures\\filmGrain.png",
+			"subTextures": [
+				{
+					"name": "default",
+					"x": 0,
+					"y": 0,
+					"w": 300,
+					"h": 200
+				}
+			]
+		}
+	],
+
+	"Sprites": [
+		{
+			"name": "heroBody",
+			"texture": "heroBody"
+		},
+		{
+			"name": "filmGrain",
+			"texture": "filmGrain"
+		}
+	]
+}
