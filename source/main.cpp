@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 			for (auto it : renderQueue)
 			{
 				it->update();
-				it->render(false);
+				it->render();
 			}
 
 			glfwSwapBuffers(Window::window);

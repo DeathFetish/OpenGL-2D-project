@@ -49,12 +49,15 @@ add_executable(
 	source/Game/Components/TransformComponent.cpp
 	source/Game/Components/PhysicComponent.h
 	source/Game/Components/PhysicComponent.cpp
+	
 	source/Game/Components/RenderComponent.h
 	source/Game/Components/RenderComponent.cpp
+	source/Game/Components/SpriteRendererComponent.h
+	source/Game/Components/SpriteRendererComponent.cpp
+	source/Game/Components/ShadowComponent.h
 
 	source/Game/Components/BehaviourComponent.h
 	source/Game/Components/BehaviourComponent.cpp
-
 	source/Game/Components/CameraComponent.h
 	source/Game/Components/CameraComponent.cpp
 	source/Game/Components/HeroComponent.h

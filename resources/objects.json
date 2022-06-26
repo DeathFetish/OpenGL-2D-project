@@ -4,7 +4,7 @@
       "name": "Hero",
       "tag": "hero",
       "HeroComponent": {},
-      "RenderComponent": {
+      "SpriteRendererComponent": {
         "renderEnable": true,
         "animationEnable": false,
         "layer": 5,
@@ -95,6 +95,12 @@
           }
         ]
       },
+      "ShadowComponent": {
+        "renderEnable": true,
+        "layer": 1,
+        "localPositionX": 3,
+        "localPositionY": -2
+      },
       "GameObjects": [
         {
           "tag": "body",
@@ -130,10 +136,11 @@
         "minX": 0,
         "minY": 0
       },
-      "RenderComponent": {
+
+      "SpriteRendererComponent": {
         "renderEnable": true,
         "animationEnable": false,
-        "layer": 0,
+        "layer": 10,
         "Sprite": "filmGrain",
         "Shader": "filmGrainShader",
         "currentAnimation": "default",

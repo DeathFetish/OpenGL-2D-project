@@ -10,7 +10,7 @@
 
 #include "BehaviourComponent.h"
 #include "TransformComponent.h"
-#include "RenderComponent.h"
+#include "SpriteRendererComponent.h"
 
 
 
@@ -28,6 +28,10 @@ private:
 
 	GameObject* objectInFocus = nullptr;
 
+	float maxOffset = 100.f;
+	float minOffset = 7.f;
+	float speed = 0.7f;
+
 	void recalculateMatrix()
 	{
 		glm::vec3 position = glm::vec3(gameObject->getComponent<TransformComponent>()->getGlobalPosition(), 0);
@@ -36,9 +40,6 @@ private:
 		viewMatrix = inverse(viewMatrix);
 		viewProjectionMatrix = projectionMatrix * viewMatrix;
 	}
-
-	float maxOffset = 100.f;
-	float minOffset = 7.f;
 
 public:
 
@@ -59,37 +60,55 @@ public:
 		recalculateMatrix();
 	}
 
+	void printVec2(std::string name, glm::vec2 vec)
+	{
+		std::cout << name << ": " << vec.x << "\t" << vec.y << std::endl;
+	}
+
 	void onPreRender() override
 	{
+		auto TC = gameObject->getComponent<TransformComponent>();
+
 		glm::vec2 focusPoint = objectInFocus->getComponent<TransformComponent>()->getGlobalPosition();
-		auto curAnimation = objectInFocus->getComponent<RenderComponent>()->currentAnimation;
+		auto curAnimation = objectInFocus->getComponent<SpriteRendererComponent>()->currentAnimation;
 		focusPoint += curAnimation->localPosition + curAnimation->rotationPoint;
 
-
-		auto TC = gameObject->getComponent<TransformComponent>();
-		TC->position.x = focusPoint.x - Window::size.x * 0.5f / scale.x;
-		TC->position.y = focusPoint.y - Window::size.y * 0.5f / scale.y;
+		glm::vec2 destinationPosition;
+		destinationPosition.x = focusPoint.x - Window::size.x * 0.5f / scale.x;
+		destinationPosition.y = focusPoint.y - Window::size.y * 0.5f / scale.y;
+		destinationPosition.x = glm::clamp(destinationPosition.x, minPositionXY.x, maxPositionXY.x);
+		destinationPosition.y = glm::clamp(destinationPosition.y, minPositionXY.y, maxPositionXY.y);
 
 		float offset = InputHandler::getKeys()[GLFW_KEY_LEFT_SHIFT] == GLFW_PRESS ? maxOffset : minOffset;
 
-		TC->position.x = glm::clamp(TC->position.x, minPositionXY.x, maxPositionXY.x);
-		TC->position.y = glm::clamp(TC->position.y, minPositionXY.y, maxPositionXY.y);
+		glm::vec2 oldPosition = TC->position;
+		TC->position = destinationPosition;
+		glm::vec2 focusToCursorDist = screenToWorldPoint(InputHandler::getMousePoint()) - (glm::vec2)focusPoint;
+		TC->position = oldPosition;
 
-		glm::vec2 deltaDistance = screenToWorldPoint(InputHandler::getMousePoint()) - (glm::vec2)focusPoint;
-		glm::vec2 velocity = glm::normalize(deltaDistance);
+		glm::vec2 velocity = glm::normalize(focusToCursorDist);
 
-		deltaDistance.x = abs(deltaDistance.x) > offset ? offset : abs(deltaDistance.x);
-		deltaDistance.y = abs(deltaDistance.y) > offset ? offset : abs(deltaDistance.y);
+		focusToCursorDist.x = abs(focusToCursorDist.x) > offset ? offset : abs(focusToCursorDist.x);
+		focusToCursorDist.y = abs(focusToCursorDist.y) > offset ? offset : abs(focusToCursorDist.y);
 
-		TC->position.x += velocity.x * deltaDistance.x;
-		TC->position.y += velocity.y * deltaDistance.y;
+		destinationPosition.x += velocity.x * focusToCursorDist.x;
+		destinationPosition.y += velocity.y * focusToCursorDist.y;
 
-		TC->position.x -= std::remainderf(TC->position.x, 1.f / 4.f);
-		TC->position.y -= std::remainderf(TC->position.y, 1.f / 4.f);
-
-		recalculateMatrix(); 
+		double deltaTime = Time::getDeltaTime();
+		glm::vec2 deltaDistance = destinationPosition - TC->position;
 		
-		gameObject->getComponent<RenderComponent>()->shader->setFloat("time", 4.f * sin(Time::getTime()));
+		velocity = glm::normalize(deltaDistance);
+		if (isnan(velocity.x)) velocity.x = 0;
+		if (isnan(velocity.y)) velocity.y = 0;
+
+		glm::vec2 curOffset = glm::vec2(velocity.x * speed * deltaTime, velocity.y * speed * deltaTime);
+		
+		TC->position.x = abs(curOffset.x) > abs(deltaDistance.x) ? destinationPosition.x : TC->position.x + curOffset.x;
+		TC->position.y = abs(curOffset.y) > abs(deltaDistance.y) ? destinationPosition.y : TC->position.y + curOffset.y;
+
+		recalculateMatrix();
+
+		gameObject->getComponent<SpriteRendererComponent>()->shader->setFloat("time", 4.f * sin(Time::getTime()));
 
 		ResourceManager::getShader("spriteShader")->setMatrix("viewProjectionMat", viewProjectionMatrix);
 		ResourceManager::getShader("shadowShader")->setMatrix("viewProjectionMat", viewProjectionMatrix);
@@ -101,6 +120,7 @@ public:
 	glm::vec2 screenToWorldPoint(const glm::vec2& point) const
 	{
 		glm::vec2 position = gameObject->getComponent<TransformComponent>()->getGlobalPosition();
+
 		return glm::vec2(position.x + point.x / scale.x, position.y + point.y / scale.y);
 	}
 };

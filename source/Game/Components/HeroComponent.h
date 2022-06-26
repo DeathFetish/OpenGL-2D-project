@@ -22,7 +22,7 @@ public:
 	{
 		const double deltaTime = Time::getDeltaTime();
 		auto TC = gameObject->getComponent<TransformComponent>();
-		auto RC = gameObject->getComponent<RenderComponent>();
+		auto RC = gameObject->getComponent<SpriteRendererComponent>();
 
 		velocity.x = 0;
 		velocity.y = 0;
@@ -48,7 +48,7 @@ public:
 
 		const auto& mouseWorldPoint = ObjectsManager::findByTag("mainCamera")->getComponent<CameraComponent>()->screenToWorldPoint(InputHandler::getMousePoint());
 		
-		auto curAnimation = gameObject->getComponent<RenderComponent>()->currentAnimation;
+		auto curAnimation = RC->currentAnimation;
 
 		int x = mouseWorldPoint.x - (TC->position.x + curAnimation->rotationPoint.x + curAnimation->localPosition.x);
 		int y = mouseWorldPoint.y - (TC->position.y + curAnimation->rotationPoint.y + curAnimation->localPosition.y);
@@ -59,7 +59,6 @@ public:
 			TC->rotation = TC->position.x + curAnimation->rotationPoint.x + curAnimation->localPosition.x > mouseWorldPoint.x ?
 				glm::degrees(bodyAngle) : glm::degrees(2 * 3.14f - bodyAngle);
 		}
-
 	}
 
 	void setParametrs(const rapidjson::Value& jsonObject) override {};

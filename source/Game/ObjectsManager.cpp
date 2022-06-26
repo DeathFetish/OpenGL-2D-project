@@ -7,6 +7,8 @@
 #include "Components/Component.h"
 #include "Components/TransformComponent.h"
 #include "Components/PhysicComponent.h"
+#include "Components/SpriteRendererComponent.h"
+#include "Components/ShadowComponent.h"
 #include "Components/CameraComponent.h"
 #include "Components/HeroComponent.h"
 
@@ -27,10 +29,16 @@ void ObjectsManager::setComponentsInGameObject(GameObject* gameObject, const rap
 		component->setParametrs(jsonObject["TransformComponent"]);
 	}
 
-	if (jsonObject.HasMember("RenderComponent"))
+	if (jsonObject.HasMember("SpriteRendererComponent"))
 	{
-		auto component = gameObject->addComponent<RenderComponent>();
-		component->setParametrs(jsonObject["RenderComponent"]);
+		auto component = gameObject->addComponent<SpriteRendererComponent>();
+		component->setParametrs(jsonObject["SpriteRendererComponent"]);
+	}
+
+	if (jsonObject.HasMember("ShadowComponent"))
+	{
+		auto component = gameObject->addComponent<ShadowComponent>();
+		component->setParametrs(jsonObject["ShadowComponent"]);
 	}
 
 	if (jsonObject.HasMember("CameraComponent"))
@@ -140,7 +148,7 @@ void ObjectsManager::addRenderComponentToRenderQueue(RenderComponent* RC)
 {
 	for (auto it = renderQueue.begin(); it != renderQueue.end(); ++it)
 	{
-		if (RC->layer >= (*it)->layer)
+		if (RC->layer <= (*it)->layer)
 		{
 			renderQueue.insert(it, RC);
 			return;

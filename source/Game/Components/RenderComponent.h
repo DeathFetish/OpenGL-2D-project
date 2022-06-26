@@ -12,34 +12,17 @@ class RenderComponent : public Component
 {
 public:
 	bool renderEnable = true;
-	bool animationEnabled = true;
-	
 	unsigned int layer = 0;
-
-	Sprite* sprite = nullptr;
-	ShaderProgram* shader = nullptr;
-
-	std::map<std::string, SpriteAnimation> animations;
-	SpriteAnimation* currentAnimation = nullptr;
-
-	unsigned int currentFrame = 0;
-	double currentAnimationTime = 0;
-
-public:
 
 	RenderComponent() = delete;
 	RenderComponent(const RenderComponent&) = delete;
 	RenderComponent& operator = (const RenderComponent&) = delete;
 
 	RenderComponent(GameObject* gameObject);
+	~RenderComponent();
 
-	void render(const bool isFlipped);
-	void update();
+	virtual void render() = 0;
+	virtual void update() {};
 
-	void addAnimation(const std::string name, SpriteAnimation& animation);
-	void deleteAnimation(const std::string name);
-
-	void setCurrentAnimation(const std::string& animationName, const unsigned int frameId = 0);
-
-	void setParametrs(const rapidjson::Value& jsonObject) override;
+	void setParametrs(const rapidjson::Value& jsonObject) override {}
 };
